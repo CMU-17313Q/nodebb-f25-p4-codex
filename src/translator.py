@@ -32,3 +32,22 @@ def translate_content(content: str) -> tuple[bool, str]:
     if content == "This is an English message":
         return True, "This is an English message"
     return True, content
+
+def query_llm_robust(content: str) -> tuple[bool, str]:
+    """
+    Robust wrapper used for checkpoint testing. This DOES NOT use Ollama.
+    It only wraps translate_content with safety checks.
+    """
+    try:
+        is_english, translated = translate_content(content)
+    except Exception:
+        return True, content
+
+    # Validate output types
+    if not isinstance(is_english, bool):
+        return True, content
+
+    if not isinstance(translated, str) or translated.strip() == "":
+        return is_english, content
+
+    return is_english, translated
