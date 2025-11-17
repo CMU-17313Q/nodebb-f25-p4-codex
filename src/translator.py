@@ -56,10 +56,8 @@ Text to analyze:
         return True, ""
 
 
-def translate_content(content: str) -> dict:
-    is_eng, translated = translate(content)
-    return {
-    "is_english": is_eng,
-    "translated_content": translated
-}
+def translate_content(content: str) -> tuple[bool, str]:
+    return translate(content)
+
+
 
