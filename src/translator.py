@@ -58,4 +58,8 @@ Text to analyze:
 
 def translate_content(content: str) -> dict:
     is_eng, translated = translate(content)
-    return {"isEnglish": is_eng, "translatedContent": translated}
+    return {
+    "is_english": is_eng,
+    "translated_content": translated
+}
+
