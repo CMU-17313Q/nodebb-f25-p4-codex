@@ -83,8 +83,7 @@ Text to analyze:
 def translate_content(content: str):
     """
     CI TESTS EXPECT A TUPLE:
-       (is_english, translated_content)
+        (is_english, translated_content)
     """
     is_english, translated_content = translate(content)
     return is_english, translated_content
-
