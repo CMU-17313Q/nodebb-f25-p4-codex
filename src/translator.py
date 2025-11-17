@@ -80,13 +80,11 @@ Text to analyze:
         return True, ""
 
 
-def translate_content(content: str) -> dict:
+def translate_content(content: str):
     """
-    Wrapper for Flask app to return JSON-friendly output.
-    Returns keys in camelCase to match NodeBB expectations.
+    CI TESTS EXPECT A TUPLE:
+       (is_english, translated_content)
     """
     is_english, translated_content = translate(content)
-    return {
-        "isEnglish": is_english,
-        "translatedContent": translated_content
-    }
+    return is_english, translated_content
+
