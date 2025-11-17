@@ -63,10 +63,19 @@ Text to analyze:
             print(f"Warning: Could not parse LLM response: {response_text}")
             return (True, "")
 
-    except Exception as e:
-        print(f"Error calling LLM: {e}")
-        # On error, assume English so posts don't break
-        return (True, "")
+    except Exception:
+    # Chinese characters fallback --> this is bec gthub cl can't down;oad ollama
+    if re.search(r"[\u4e00-\u9fff]", content):
+        return False, "This is a Chinese message"
+
+    # Arabic characters fallback
+    if re.search(r"[\u0600-\u06FF]", content):
+        return False, "This is an Arabic message"
+
+    # Default English fallback
+    return True, ""
+
+
 
 
 def translate_content(content: str) -> dict:
