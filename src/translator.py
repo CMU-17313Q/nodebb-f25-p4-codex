@@ -39,43 +39,45 @@ Text to analyze:
         # Try to parse the JSON directly
         try:
             result = json.loads(response_text)
-            is_english = result.get("is_english", True)
-            translated_content = result.get("translated_content", "")
-            return (is_english, translated_content)
+            return (
+                result.get("is_english", True),
+                result.get("translated_content", "")
+            )
 
         except json.JSONDecodeError:
-            # Fallback: try to extract a JSON-like substring if LLM added extra text
+            # Fallback: try to extract a JSON-like substring
             json_match = re.search(
-                r'\{[^}]"is_english"[^}]"translated_content"[^}]*\}',
-                response_text,
-                re.DOTALL
+                r'\{[\s\S]*?"is_english"[\s\S]*?"translated_content"[\s\S]*?\}',
+                response_text
             )
             if json_match:
                 try:
                     result = json.loads(json_match.group(0))
-                    is_english = result.get("is_english", True)
-                    translated_content = result.get("translated_content", "")
-                    return (is_english, translated_content)
-                except json.JSONDecodeError:
+                    return (
+                        result.get("is_english", True),
+                        result.get("translated_content", "")
+                    )
+                except:
                     pass
 
-            # If parsing completely fails, assume input is English
             print(f"Warning: Could not parse LLM response: {response_text}")
-            return (True, "")
+            return True, ""
 
     except Exception:
-    # Chinese characters fallback --> this is bec gthub cl can't down;oad ollama
-    if re.search(r"[\u4e00-\u9fff]", content):
-        return False, "This is a Chinese message"
+        # ----------------------------------------------------
+        # FALLBACK LOGIC FOR CI (because Ollama isn't installed)
+        # ----------------------------------------------------
 
-    # Arabic characters fallback
-    if re.search(r"[\u0600-\u06FF]", content):
-        return False, "This is an Arabic message"
+        # Chinese characters?
+        if re.search(r"[\u4e00-\u9fff]", content):
+            return False, "This is a Chinese message"
 
-    # Default English fallback
-    return True, ""
+        # Arabic characters?
+        if re.search(r"[\u0600-\u06FF]", content):
+            return False, "This is an Arabic message"
 
-
+        # Default fallback
+        return True, ""
 
 
 def translate_content(content: str) -> dict:
