@@ -1,34 +1,81 @@
-def translate_content(content: str) -> tuple[bool, str]:
-    if content == "这是一条中文消息":
-        return False, "This is a Chinese message"
-    if content == "Ceci est un message en français":
-        return False, "This is a French message"
-    if content == "Esta es un mensaje en español":
-        return False, "This is a Spanish message"
-    if content == "Esta é uma mensagem em português":
-        return False, "This is a Portuguese message"
-    if content  == "これは日本語のメッセージです":
-        return False, "This is a Japanese message"
-    if content == "이것은 한국어 메시지입니다":
-        return False, "This is a Korean message"
-    if content == "Dies ist eine Nachricht auf Deutsch":
-        return False, "This is a German message"
-    if content == "Questo è un messaggio in italiano":
-        return False, "This is an Italian message"
-    if content == "Это сообщение на русском":
-        return False, "This is a Russian message"
-    if content == "هذه رسالة باللغة العربية":
-        return False, "This is an Arabic message"
-    if content == "यह हिंदी में संदेश है":
-        return False, "This is a Hindi message"
-    if content == "นี่คือข้อความภาษาไทย":
-        return False, "This is a Thai message"
-    if content == "Bu bir Türkçe mesajdır":
-        return False, "This is a Turkish message"
-    if content == "Đây là một tin nhắn bằng tiếng Việt":
-        return False, "This is a Vietnamese message"
-    if content == "Esto es un mensaje en catalán":
-        return False, "This is a Catalan message"
-    if content == "This is an English message":
-        return True, "This is an English message"
-    return True, content
+import ollama
+import json
+import re
+
+def translate(content: str) -> tuple[bool, str]:
+    """
+    Translates content if it's not in English.
+    Returns (is_english: bool, translated_content: str)
+    """
+
+    prompt = f
+    """Analyze the following text and determine if it is in English or another language.
+    If the text is in English, respond with exactly:
+    {{"is_english": true, "translated_content": ""}}
+
+    If the text is NOT in English, translate it to English and respond with exactly:
+    {{"is_english": false, "translated_content": "YOUR TRANSLATION HERE"}}
+
+    You must respond ONLY with valid JSON in the exact format above. Do not include any other text.
+
+    Text to analyze:
+    {content}
+    """
+
+    try:
+        # Call the LLM using Ollama
+        response = ollama.chat(
+            model='llama3.2',
+            messages=[
+                {
+                    'role': 'user',
+                    'content': prompt
+                }
+            ]
+        )
+
+        response_text = response['message']['content'].strip()
+
+        # Try to parse the JSON directly
+        try:
+            result = json.loads(response_text)
+            is_english = result.get("is_english", True)
+            translated_content = result.get("translated_content", "")
+            return (is_english, translated_content)
+
+        except json.JSONDecodeError:
+            # Fallback: try to extract a JSON-like substring if LLM added extra text
+            json_match = re.search(
+                r'\{[^}]"is_english"[^}]"translated_content"[^}]*\}',
+                response_text,
+                re.DOTALL
+            )
+            if json_match:
+                try:
+                    result = json.loads(json_match.group(0))
+                    is_english = result.get("is_english", True)
+                    translated_content = result.get("translated_content", "")
+                    return (is_english, translated_content)
+                except json.JSONDecodeError:
+                    pass
+
+            # If parsing completely fails, assume input is English
+            print(f"Warning: Could not parse LLM response: {response_text}")
+            return (True, "")
+
+    except Exception as e:
+        print(f"Error calling LLM: {e}")
+        # On error, assume English so posts don't break
+        return (True, "")
+
+
+def translate_content(content: str) -> dict:
+    """
+    Wrapper for Flask app to return JSON-friendly output.
+    Returns keys in camelCase to match NodeBB expectations.
+    """
+    is_english, translated_content = translate(content)
+    return {
+        "isEnglish": is_english,
+        "translatedContent": translated_content
+    }
